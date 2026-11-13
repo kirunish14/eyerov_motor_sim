@@ -106,7 +106,8 @@ no overshoot, acceleration limit, deadband, reverse, large `dt` stability.
 
 ## Results
 
-Tested on Ubuntu 22.04 with ROS 2 Humble.
+Tested on Ubuntu 22.04 with ROS 2 Humble. Plots were made with rqt (PyQtGraph backend);
+blue = `/motor_left/rpm`, red = `/motor_right/rpm`.
 
 **Command used**
 ```bash
@@ -114,22 +115,34 @@ ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist \
   "{linear: {x: 0.4}, angular: {z: 0.2}}"
 ```
 
-**Expected targets** (`track_width = 0.3`, `max_speed = 1.0`, `max_rpm = 3000`):
+**Expected steady-state values** (`track_width = 0.3`, `max_speed = 1.0`, `max_rpm = 3000`):
 left = (0.4 − 0.03) × 3000 = **1110 RPM**, right = (0.4 + 0.03) × 3000 = **1290 RPM**.
+The right motor spins faster because positive `angular.z` means turning left.
 
-**1. Step response.** The target jumps to its value and the simulated RPM follows with a first-order lag (`tau = 0.4 s`), settling in about 2 seconds with no overshoot.
+### 1. Step response
 
-![Target vs actual RPM](docs/ramp.png)
+When the command starts, both motors ramp up smoothly from 0 and settle at 1110 and
+1290 RPM in about 2 seconds, with no overshoot. The left motor reaches about 63% of its
+final value (~700 RPM) roughly 0.4 s after the command starts, matching the configured
+time constant `tau = 0.4 s`.
 
-**2. Watchdog failsafe.** When `cmd_vel` stops, the targets drop to 0 after 0.5 s and the RPM decays smoothly to 0. When commands resume, the motors ramp up again.
+![Step response](docs/step_response.png)
 
-![Watchdog decay](docs/watchdog_decay.png)
+### 2. Watchdog failsafe
 
-**3. Telemetry rate.** `ros2 topic hz /motor_left/rpm` reports about 50 Hz, matching `publish_rate_hz`.
+When `cmd_vel` stops, the motors hold their speed until the watchdog (0.5 s) trips and
+sets the targets to 0. The RPM then decays smoothly to 0 in under 2 seconds instead of
+stopping instantly, as a real motor would.
 
-**Demo video** (ramp-up, stop, decay, restart): [link here]
+![Watchdog failsafe](docs/watchdog_failsafe.png)
 
-Plots were made with PlotJuggler.
+### 3. Telemetry rate
+
+`ros2 topic hz /motor_left/rpm` reports about 50 Hz, matching `publish_rate_hz`.
+
+### Demo video
+
+Ramp-up, stop, decay and restart in one clip: [https://youtu.be/mfolmz8WGjo]
 
 ## Possible extensions
 
