@@ -104,6 +104,33 @@ The mixer and motor model are plain Python (no ROS imports), so the maths is
 unit-tested independently of ROS: mixing signs, clamping, lag time constant,
 no overshoot, acceleration limit, deadband, reverse, large `dt` stability.
 
+## Results
+
+Tested on Ubuntu 22.04 with ROS 2 Humble.
+
+**Command used**
+```bash
+ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.4}, angular: {z: 0.2}}"
+```
+
+**Expected targets** (`track_width = 0.3`, `max_speed = 1.0`, `max_rpm = 3000`):
+left = (0.4 − 0.03) × 3000 = **1110 RPM**, right = (0.4 + 0.03) × 3000 = **1290 RPM**.
+
+**1. Step response.** The target jumps to its value and the simulated RPM follows with a first-order lag (`tau = 0.4 s`), settling in about 2 seconds with no overshoot.
+
+![Target vs actual RPM](docs/ramp.png)
+
+**2. Watchdog failsafe.** When `cmd_vel` stops, the targets drop to 0 after 0.5 s and the RPM decays smoothly to 0. When commands resume, the motors ramp up again.
+
+![Watchdog decay](docs/watchdog_decay.png)
+
+**3. Telemetry rate.** `ros2 topic hz /motor_left/rpm` reports about 50 Hz, matching `publish_rate_hz`.
+
+**Demo video** (ramp-up, stop, decay, restart): [link here]
+
+Plots were made with PlotJuggler.
+
 ## Possible extensions
 
 * Custom telemetry message (rpm, target, current, temperature) instead of `Float32`.
