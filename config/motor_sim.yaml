@@ -1,0 +1,12 @@
+# Use decimal points (3000.0, not 3000) so values parse as doubles.
+motor_sim_node:
+  ros__parameters:
+    max_rpm: 3000.0          # motor saturation limit
+    max_speed: 1.0           # m/s that maps to max_rpm
+    track_width: 0.3         # m between left and right thrusters
+    tau: 0.4                 # s, motor lag time constant (0 = instant)
+    max_accel_rpm_s: 6000.0  # RPM/s slew limit (0 = unlimited)
+    deadband_rpm: 20.0       # targets smaller than this are treated as 0
+    publish_rate_hz: 50.0    # control loop + telemetry rate
+    cmd_timeout_s: 0.5       # watchdog: zero targets if no cmd_vel (0 = off)
+    noise_std_rpm: 0.0       # Gaussian noise on telemetry (0 = off)
